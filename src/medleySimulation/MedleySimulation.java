@@ -96,11 +96,6 @@ public class MedleySimulation {
 		for (int i=0;i<numTeams;i++) {
         	teams[i]=new SwimTeam(i, finishLine, peopleLocations);        	
 		}
-		
-// check if they're in correct order
-//		for (int i = 0; i < 4; i++) {
-//			System.out.println(teams[0].swimmers[i].getSwimStroke());
-//		}
 		setupGUI(frameX, frameY);  //Start Panel thread - for drawing animation
 		
 		//start viewer thread

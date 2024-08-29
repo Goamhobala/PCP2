@@ -57,6 +57,7 @@ public class Swimmer extends Thread {
 		finish=f;
 		rand=new Random();
 	}
+	
 	//getter
 	public   int getX() { return currentBlock.getX();}	
 	
@@ -141,7 +142,7 @@ public class Swimmer extends Thread {
 			//Swimmer arrives
 			sleep(movingSpeed+(rand.nextInt(10))); //arriving takes a while
 			myLocation.setArrived();
-			enterStadium();	
+			enterStadium();
 			
 			goToStartingBlocks();
 								

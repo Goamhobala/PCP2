@@ -16,8 +16,6 @@ JAVAC_FLAGS = -d bin -sourcepath src
 # Main class
 MAIN_CLASS = medleySimulation.MedleySimulation
 
-# Default arguments (update these if needed)
-# ARGS ?= input/65_by_65_all_4.csv output/65_by_65_all_4.png  # Replace 'default_arguments' with your specific default arguments, if any
 
 # Targets
 .PHONY: all clean run directories
