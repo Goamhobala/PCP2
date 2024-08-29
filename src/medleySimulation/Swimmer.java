@@ -57,7 +57,6 @@ public class Swimmer extends Thread {
 		finish=f;
 		rand=new Random();
 	}
-	
 	//getter
 	public   int getX() { return currentBlock.getX();}	
 	
