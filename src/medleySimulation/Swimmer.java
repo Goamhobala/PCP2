@@ -6,6 +6,7 @@ package medleySimulation;
 import java.awt.Color;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 
@@ -13,7 +14,8 @@ public class Swimmer extends Thread {
 	
 	public static StadiumGrid stadium; //shared 
 	private FinishCounter finish; //shared
-	
+	private AtomicBoolean baton;
+
 		
 	GridBlock currentBlock;
 	private Random rand;
@@ -47,8 +49,9 @@ public class Swimmer extends Thread {
 	    private final SwimStroke swimStroke;
 	
 	//Constructor
-	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s) {
+	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicBoolean baton) {
 		this.swimStroke = s;
+		this.baton = baton;
 		this.ID=ID;
 		movingSpeed=speed; //range of speeds for swimmers
 		this.myLocation = loc;
@@ -67,7 +70,7 @@ public class Swimmer extends Thread {
 	//getter
 	public   int getSpeed() { return movingSpeed; }
 
-	
+	public void passBaton(){baton.set(true);}
 	public SwimStroke getSwimStroke() {
 		return swimStroke;
 	}
@@ -145,10 +148,13 @@ public class Swimmer extends Thread {
 			enterStadium();
 			
 			goToStartingBlocks();
-								
-			dive(); 
-				
-			swimRace();
+
+			synchronized (baton) {
+				while (!baton.get());
+				dive();
+				swimRace();
+				baton.set(false);
+			}
 			if(swimStroke.order==4) {
 				finish.finishRace(ID, team); // fnishline
 			}
