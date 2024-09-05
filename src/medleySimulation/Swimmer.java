@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.BrokenBarrierException;
 
 
@@ -18,6 +19,7 @@ public class Swimmer extends Thread {
 	private FinishCounter finish; //shared
 	private AtomicInteger baton;
 	private CyclicBarrier startBarrier;
+	private CountDownLatch startingLatch;
 
 		
 	GridBlock currentBlock;
@@ -52,10 +54,11 @@ public class Swimmer extends Thread {
 	    private final SwimStroke swimStroke;
 	
 	//Constructor
-	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicInteger baton, CyclicBarrier startBarrier) {
+	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicInteger baton, CyclicBarrier startBarrier, CountDownLatch startingLatch) {
 		this.swimStroke = s;
 		this.baton = baton;
 		this.ID=ID;
+		this.startingLatch = startingLatch;
 		movingSpeed=speed; //range of speeds for swimmers
 		this.myLocation = loc;
 		this.team=t;
@@ -148,7 +151,8 @@ public class Swimmer extends Thread {
 			//Swimmer arrives
 			sleep(movingSpeed+(rand.nextInt(10))); //arriving takes a while
 			myLocation.setArrived();
-			enterStadium();
+				startingLatch.await();
+				enterStadium();
 			// not robust enought but works
 			sleep((swimStroke.order - 1) * 750);
 
@@ -163,8 +167,7 @@ public class Swimmer extends Thread {
 			}
 			// This part ensures that swimmers will swim in the order of swim stroke
 			synchronized (baton){
-				while (!(swimStroke.order - 1 == baton.get())){
-					wait();
+				while (!(swimStroke.order - 1 == baton.get()))wait();
 				}
 				dive();
 				swimRace();

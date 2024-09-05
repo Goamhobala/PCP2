@@ -7,6 +7,12 @@
 	* Temperarily fixed with spinning and passing baton
 * Enforce order amongst threads: Forcing release lock once finished diving, pass back to swim team -> pass to next thread: 
 	* Use atomicInteger as baton, and only swim if swimStroke == baton
+		* Make this into a synchronized block to avoid unnecessary spinning: problem: not exiting the pool
 	* Problem: If black don't enter first, can't get to the pool
 		* Now I'm using sleep to temporarily address the issue, but could , maybe do the same as the baton?
-* Make sure th
+* Problem: One swimmer missing, problem probably lies in enterStadium
+	* FIXED with synchronisation, there's probably a race condition
+* Problem: Start button not working, can probably be solved with barrier: First makes every black wait for other blacks: Works
+	* Now just need to add a start button event: Solution: Latch?
+		* tried volatile boolean but will need to spin
+		* Latch solves it

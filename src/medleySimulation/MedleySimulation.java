@@ -7,6 +7,8 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MedleySimulation {
 	static final int numTeams=10;
@@ -26,7 +28,7 @@ public class MedleySimulation {
 	
 	static FinishCounter finishLine; //records who won
 	static CounterDisplay counterDisplay ; //threaded display of counter
-	
+	static CountDownLatch startingLatch;
 
 	//Method to setup all the elements of the GUI
 	public static void setupGUI(int frameX,int frameY) {
@@ -55,12 +57,14 @@ public class MedleySimulation {
 	    //Add start and exit buttons
 	    JPanel b = new JPanel();
         b.setLayout(new BoxLayout(b, BoxLayout.LINE_AXIS)); 
-        
+
+
         JButton startB = new JButton("Start");
 		// add the listener to the jbutton to handle the "pressed" event
+
 		startB.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e)  {
-			    	  //does nothing - fix this 	  
+			    	  startingLatch.countDown();
 		    }
 		   });
 	
@@ -88,7 +92,7 @@ public class MedleySimulation {
 	
 	
 	    finishLine = new FinishCounter(); //counters for people inside and outside club
-	 
+	 	startingLatch = new CountDownLatch(1);
 		stadiumGrid = new StadiumGrid(gridX, gridY, numTeams,finishLine); //setup stadium with size     
 		SwimTeam.stadium = stadiumGrid; //grid shared with class
 		Swimmer.stadium = stadiumGrid; //grid shared with class
@@ -96,7 +100,7 @@ public class MedleySimulation {
 		teams = new SwimTeam[numTeams];
 		CyclicBarrier barrier = new CyclicBarrier(numTeams);
 		for (int i=0;i<numTeams;i++) {
-        	teams[i]=new SwimTeam(i, finishLine, peopleLocations, barrier);
+        	teams[i]=new SwimTeam(i, finishLine, peopleLocations, barrier, startingLatch);
 		}
 		setupGUI(frameX, frameY);  //Start Panel thread - for drawing animation
 		
