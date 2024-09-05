@@ -149,11 +149,18 @@ public class Swimmer extends Thread {
 			sleep((swimStroke.order - 1) * 750);
 
 			goToStartingBlocks();
-			
-			while (!(swimStroke.order - 1 == baton.get()));
-			dive();
-			swimRace();
-			baton.set(baton.get() + 1);
+
+			// This part ensures that swimmers will swim in the order of swim stroke
+			synchronized (baton){
+				if (swimStroke.order - 1 == baton.get()){
+					dive();
+					swimRace();
+					baton.set(baton.get() + 1);}
+				else{
+					wait();
+				}
+				notifyAll();
+			}
 			if(swimStroke.order==4) {
 				finish.finishRace(ID, team); // fnishline
 			}
