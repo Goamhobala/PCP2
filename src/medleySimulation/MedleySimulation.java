@@ -6,6 +6,7 @@ import javax.swing.*;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.CyclicBarrier;
 
 public class MedleySimulation {
 	static final int numTeams=10;
@@ -93,8 +94,9 @@ public class MedleySimulation {
 		Swimmer.stadium = stadiumGrid; //grid shared with class
 	    peopleLocations = new PeopleLocation[numTeams*SwimTeam.sizeOfTeam]; //four swimmers per team
 		teams = new SwimTeam[numTeams];
+		CyclicBarrier barrier = new CyclicBarrier(numTeams);
 		for (int i=0;i<numTeams;i++) {
-        	teams[i]=new SwimTeam(i, finishLine, peopleLocations);        	
+        	teams[i]=new SwimTeam(i, finishLine, peopleLocations, barrier);
 		}
 		setupGUI(frameX, frameY);  //Start Panel thread - for drawing animation
 		
@@ -107,6 +109,7 @@ public class MedleySimulation {
       	results.start();
       	
       	//start teams, which start swimmers.
+
       	for (int i=0;i<numTeams;i++) {
 			teams[i].start();
 		}

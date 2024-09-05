@@ -7,6 +7,8 @@ import java.awt.Color;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.BrokenBarrierException;
 
 
 
@@ -15,6 +17,7 @@ public class Swimmer extends Thread {
 	public static StadiumGrid stadium; //shared 
 	private FinishCounter finish; //shared
 	private AtomicInteger baton;
+	private CyclicBarrier startBarrier;
 
 		
 	GridBlock currentBlock;
@@ -34,7 +37,7 @@ public class Swimmer extends Thread {
 	    	
 	     private final double strokeTime;
 	     private final int order; // in minutes
-	     private final Color colour;   
+	     private final Color colour;
 
 	     SwimStroke( int order, double sT, Color c) {
 	            this.strokeTime = sT;
@@ -49,13 +52,14 @@ public class Swimmer extends Thread {
 	    private final SwimStroke swimStroke;
 	
 	//Constructor
-	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicInteger baton) {
+	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicInteger baton, CyclicBarrier startBarrier) {
 		this.swimStroke = s;
 		this.baton = baton;
 		this.ID=ID;
 		movingSpeed=speed; //range of speeds for swimmers
 		this.myLocation = loc;
 		this.team=t;
+		this.startBarrier = startBarrier;
 		start = stadium.returnStartingBlock(team);
 		finish=f;
 		rand=new Random();
@@ -145,30 +149,34 @@ public class Swimmer extends Thread {
 			sleep(movingSpeed+(rand.nextInt(10))); //arriving takes a while
 			myLocation.setArrived();
 			enterStadium();
-			// not robust enought
+			// not robust enought but works
 			sleep((swimStroke.order - 1) * 750);
 
 			goToStartingBlocks();
-
+			try{
+				if (swimStroke.order == 1){
+					startBarrier.await();
+				}
+			}
+			catch (BrokenBarrierException e){
+				e.printStackTrace();
+			}
 			// This part ensures that swimmers will swim in the order of swim stroke
 			synchronized (baton){
-				if (swimStroke.order - 1 == baton.get()){
-					dive();
-					swimRace();
-					baton.set(baton.get() + 1);}
-				else{
+				while (!(swimStroke.order - 1 == baton.get())){
 					wait();
 				}
-				notifyAll();
+				dive();
+				swimRace();
+				baton.set(baton.get() + 1);
 			}
 			if(swimStroke.order==4) {
 				finish.finishRace(ID, team); // fnishline
 			}
 			else {
-				//System.out.println("Thread "+this.ID + " done " + currentBlock.getX()  + " " +currentBlock.getY() );			
+				//System.out.println("Thread "+this.ID + " done " + currentBlock.getX()  + " " +currentBlock.getY() );
 				exitPool();//if not last swimmer leave pool
 			}
-			
 		} catch (InterruptedException e1) {  //do nothing
 		} 
 	}
