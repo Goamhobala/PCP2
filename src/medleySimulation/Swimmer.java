@@ -6,7 +6,7 @@ package medleySimulation;
 import java.awt.Color;
 
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 
@@ -14,7 +14,7 @@ public class Swimmer extends Thread {
 	
 	public static StadiumGrid stadium; //shared 
 	private FinishCounter finish; //shared
-	private AtomicBoolean baton;
+	private AtomicInteger baton;
 
 		
 	GridBlock currentBlock;
@@ -49,7 +49,7 @@ public class Swimmer extends Thread {
 	    private final SwimStroke swimStroke;
 	
 	//Constructor
-	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicBoolean baton) {
+	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicInteger baton) {
 		this.swimStroke = s;
 		this.baton = baton;
 		this.ID=ID;
@@ -70,7 +70,6 @@ public class Swimmer extends Thread {
 	//getter
 	public   int getSpeed() { return movingSpeed; }
 
-	public void passBaton(){baton.set(true);}
 	public SwimStroke getSwimStroke() {
 		return swimStroke;
 	}
@@ -146,15 +145,15 @@ public class Swimmer extends Thread {
 			sleep(movingSpeed+(rand.nextInt(10))); //arriving takes a while
 			myLocation.setArrived();
 			enterStadium();
-			
-			goToStartingBlocks();
+			// not robust enought
+			sleep((swimStroke.order - 1) * 750);
 
-			synchronized (baton) {
-				while (!baton.get());
-				dive();
-				swimRace();
-				baton.set(false);
-			}
+			goToStartingBlocks();
+			
+			while (!(swimStroke.order - 1 == baton.get()));
+			dive();
+			swimRace();
+			baton.set(baton.get() + 1);
 			if(swimStroke.order==4) {
 				finish.finishRace(ID, team); // fnishline
 			}

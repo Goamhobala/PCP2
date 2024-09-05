@@ -4,7 +4,7 @@ package medleySimulation;
 
 import medleySimulation.Swimmer.SwimStroke;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class SwimTeam extends Thread {
@@ -13,12 +13,12 @@ public class SwimTeam extends Thread {
 	private Swimmer [] swimmers;
 	private int teamNo; //team number
 //	private ReentrantLock baton; // Lock held by the swimmer swimming.
-	private AtomicBoolean baton;
+	private AtomicInteger baton;
 	public static final int sizeOfTeam=4;
 	
 	SwimTeam( int ID, FinishCounter finish,PeopleLocation [] locArr ) {
 		this.teamNo=ID;
-		this.baton = new AtomicBoolean(false);
+		this.baton = new AtomicInteger(0);
 		
 		swimmers= new Swimmer[sizeOfTeam];
 	    SwimStroke[] strokes = SwimStroke.values();  // Get all enum constants
@@ -37,13 +37,6 @@ public class SwimTeam extends Thread {
 
 		for(int s=0;s<sizeOfTeam; s++) { //start swimmer threads
 			swimmers[s].start();
-		}
-
-		int counter = 0;
-		while (counter < 4){
-
-			while(baton.get());
-			swimmers[counter].passBaton();
 		}
 //		}catch (InterruptedException e) {
 //			// TODO Auto-generated catch block
