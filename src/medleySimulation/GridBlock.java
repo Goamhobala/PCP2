@@ -6,7 +6,7 @@ package medleySimulation;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GridBlock {
-	
+	// Make isOccupied atomic to avoid data races
 	private AtomicInteger isOccupied;
 	
 	private final boolean isStart;  //is this a starting block?

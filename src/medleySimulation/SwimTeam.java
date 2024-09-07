@@ -14,7 +14,7 @@ public class SwimTeam extends Thread {
 	public static StadiumGrid stadium; //shared 
 	private Swimmer [] swimmers;
 	private int teamNo; //team number
-	private AtomicInteger baton;
+	private Object baton;
 	private CountDownLatch startingLatch;
 
 	private CyclicBarrier startBarrier;
@@ -22,24 +22,27 @@ public class SwimTeam extends Thread {
 	
 	SwimTeam( int ID, FinishCounter finish,PeopleLocation [] locArr, CyclicBarrier barrier, CountDownLatch startingLatch) {
 		this.teamNo=ID;
-		this.baton = new AtomicInteger(0);
+		// Baton acts as a lock to prevent multiple swimmers swimming at once as well as enforcing order
+		this.baton = new Object();
+		// Barrier passed down from the main class
 		this.startBarrier = barrier;
+		// Latch passed down from the main class
 		this.startingLatch = startingLatch;
 		swimmers= new Swimmer[sizeOfTeam];
 	    SwimStroke[] strokes = SwimStroke.values();  // Get all enum constants
 		stadium.returnStartingBlock(ID);
-
+		AtomicInteger turnToEnter = new AtomicInteger(1);
 		for(int i=teamNo*sizeOfTeam,s=0;i<((teamNo+1)*sizeOfTeam); i++,s++) { //initialise swimmers in team
 			locArr[i]= new PeopleLocation(i,strokes[s].getColour());
 	      	int speed=(int)(Math.random() * (3)+30); //range of speeds
-			swimmers[s] = new Swimmer(i,teamNo,locArr[i],finish,speed,strokes[s], baton, startBarrier, startingLatch); //hardcoded speed for now
+			swimmers[s] = new Swimmer(i,teamNo,locArr[i],finish,speed,strokes[s], turnToEnter, baton, startBarrier, startingLatch);
 		}
 	}
 	
 	
 	public void run() {
 //		try {
-
+		// The try block here was unnecessary
 		for(int s=0;s<sizeOfTeam; s++) { //start swimmer threads
 			swimmers[s].start();
 		}

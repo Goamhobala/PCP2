@@ -68,10 +68,9 @@ public class StadiumGrid {
 	
 	//a person enters the stadium
 	public GridBlock enterStadium(PeopleLocation myLocation) throws InterruptedException  {
-			synchronized (entrance){
 //				while((entrance.get(myLocation.getID()))) {wait();} //wait at entrace until entrance is free
-				myLocation.setLocation(entrance);
-				myLocation.setInStadium(true);}
+			myLocation.setLocation(entrance);
+			myLocation.setInStadium(true);
 			return entrance;
 			
 	}

@@ -17,7 +17,8 @@ public class Swimmer extends Thread {
 	
 	public static StadiumGrid stadium; //shared 
 	private FinishCounter finish; //shared
-	private AtomicInteger baton;
+	private AtomicInteger turnToEnter;
+	private Object baton;
 	private CyclicBarrier startBarrier;
 	private CountDownLatch startingLatch;
 
@@ -54,15 +55,19 @@ public class Swimmer extends Thread {
 	    private final SwimStroke swimStroke;
 	
 	//Constructor
-	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s, AtomicInteger baton, CyclicBarrier startBarrier, CountDownLatch startingLatch) {
+	Swimmer( int ID, int t, PeopleLocation loc, FinishCounter f, int speed, SwimStroke s,AtomicInteger turnToEnter, Object baton, CyclicBarrier startBarrier, CountDownLatch startingLatch) {
 		this.swimStroke = s;
+		// Baton ensures that swimmers swim in the correct order
 		this.baton = baton;
 		this.ID=ID;
+		// StartingLatch ensures that swimmers only enter the stadium once the start button is pressed
 		this.startingLatch = startingLatch;
 		movingSpeed=speed; //range of speeds for swimmers
 		this.myLocation = loc;
 		this.team=t;
+		// startBarrier ensures that first swimmer of each team waits for other first swimmers to arrive
 		this.startBarrier = startBarrier;
+		this.turnToEnter = turnToEnter;
 		start = stadium.returnStartingBlock(team);
 		finish=f;
 		rand=new Random();
@@ -96,11 +101,11 @@ public class Swimmer extends Thread {
 		int y_st= start.getY();
 	//System.out.println("Thread "+this.ID + " has start position: " + x_st  + " " +y_st );
 	// System.out.println("Thread "+this.ID + " at " + currentBlock.getX()  + " " +currentBlock.getY() );
-	 while (currentBlock!=start) {
+	    while (currentBlock!=start) {
 		//	System.out.println("Thread "+this.ID + " has starting position: " + x_st  + " " +y_st );
 		//	System.out.println("Thread "+this.ID + " at position: " + currentBlock.getX()  + " " +currentBlock.getY() );
-			sleep(movingSpeed*3);  //not rushing 
 			currentBlock=stadium.moveTowards(currentBlock,x_st,y_st,myLocation); //head toward starting block
+			sleep(movingSpeed*3);  //not rushing
 		//	System.out.println("Thread "+this.ID + " moved toward start to position: " + currentBlock.getX()  + " " +currentBlock.getY() );
 		}
 	System.out.println("-----------Thread "+this.ID + " at start " + currentBlock.getX()  + " " +currentBlock.getY() );
@@ -139,7 +144,7 @@ public class Swimmer extends Thread {
 		int bench=stadium.getMaxY()-swimStroke.getOrder(); 			 //they line up
 		int lane = currentBlock.getX()+1;//slightly offset
 		currentBlock=stadium.moveTowards(currentBlock,lane,currentBlock.getY(),myLocation);
-	   while (currentBlock.getY()!=bench) {
+	   while (currentBlock.getY()!=bencgith) {
 		 	currentBlock=stadium.moveTowards(currentBlock,lane,bench,myLocation);
 			sleep(movingSpeed*3);  //not rushing 
 		}
@@ -150,13 +155,28 @@ public class Swimmer extends Thread {
 			
 			//Swimmer arrives
 			sleep(movingSpeed+(rand.nextInt(10))); //arriving takes a while
+			// waiting for the start button to be pressed
 			myLocation.setArrived();
-				startingLatch.await();
-				enterStadium();
-			// not robust enought but works
-			sleep((swimStroke.order - 1) * 750);
+			startingLatch.await();
 
-			goToStartingBlocks();
+			synchronized (turnToEnter) {
+				while (!(turnToEnter.get() == swimStroke.order)) {
+					turnToEnter.wait();
+				}
+				enterStadium();
+				turnToEnter.set(turnToEnter.get() + 1);
+				turnToEnter.notifyAll();
+			}
+			// Weirdly, swimmers entering in order doesn't imply that they'll appear in StadiumView in order
+			// sleep is the only way to ensure that other threads can start when goToStartingBlocks is in progress
+				sleep((swimStroke.order -1 )*750);
+				goToStartingBlocks();
+
+
+
+
+
+
 			try{
 				if (swimStroke.order == 1){
 					startBarrier.await();
@@ -167,11 +187,9 @@ public class Swimmer extends Thread {
 			}
 			// This part ensures that swimmers will swim in the order of swim stroke
 			synchronized (baton){
-				while (!(swimStroke.order - 1 == baton.get()))wait();
-				}
+				// This ensures that only one swimmer swims at a time
 				dive();
 				swimRace();
-				baton.set(baton.get() + 1);
 			}
 			if(swimStroke.order==4) {
 				finish.finishRace(ID, team); // fnishline
